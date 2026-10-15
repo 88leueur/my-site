@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TRACE – OSINT Investigation Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050606;--panel:#0d0f0f;--panel2:#131616;--line:#1f2424;--line2:#2c3333;--tx:#e6ebe9;--mut:#7d8885;--g:#39ff88;--gd:#39ff8826;--warn:#ffb454;--sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 var(--sans);-webkit-text-size-adjust:100%;background-image:radial-gradient(circle at 1px 1px,#ffffff08 1px,transparent 0);background-size:22px 22px}
+button,input{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px 64px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:#050606e6;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:#050606;z-index:30}
+.bar{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+.logo{font:600 18px var(--mono);letter-spacing:.18em;display:flex;align-items:center;gap:9px;background:none;border:0;cursor:pointer;padding:0}
+.logo i{width:10px;height:10px;border:2px solid var(--g);border-radius:50%;display:block;position:relative}
+.logo i::after{content:"";position:absolute;inset:2px;background:var(--g);border-radius:50%}
+nav{display:flex;gap:2px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{background:none;border:0;padding:8px 11px;border-radius:6px;color:var(--mut);cursor:pointer;white-space:nowrap;font-size:14px;transition:color .15s,background .15s}
+nav button:hover{color:var(--tx)}
+nav button[aria-current=page]{color:var(--g);background:var(--gd)}
+.st{display:flex;align-items:center;gap:7px;font:12px var(--mono);color:var(--mut);padding:5px 9px;border:1px solid var(--line);border-radius:99px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:pl 2.4s infinite}
+.dot.off{background:var(--warn);box-shadow:0 0 8px var(--warn);animation:none}
+@keyframes pl{50%{opacity:.35}}
+@media(max-width:640px){.st .lbl{display:none}.bar{flex-wrap:wrap}nav{order:3;width:100%;margin-left:-6px}.st{margin-left:auto}}
+.hero{padding:40px 0 22px;position:relative}
+.hero h1{font:500 clamp(28px,6.5vw,46px)/1.1 var(--sans);letter-spacing:-.02em;margin:0 0 10px;max-width:15ch}
+.hero p{color:var(--mut);margin:0 0 22px;max-width:56ch}
+.hero .scan{position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--g),transparent);opacity:0;animation:sc 2.2s .3s ease-out 1}
+@keyframes sc{0%{top:0;opacity:.9}100%{top:100%;opacity:0}}
+.search{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:0 14px;transition:border-color .2s,box-shadow .2s}
+.search:focus-within{border-color:var(--g);box-shadow:0 0 0 3px var(--gd)}
+.search span{font:500 14px var(--mono);color:var(--g)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;padding:15px 0;font-size:16px}
+.search button{background:none;border:0;color:var(--mut);cursor:pointer;padding:6px}
+.hint{font:12px var(--mono);color:var(--mut);margin-top:9px}
+.stats{display:flex;gap:22px;margin-top:20px;font:12px var(--mono);color:var(--mut);flex-wrap:wrap}
+.stats b{color:var(--tx);font-weight:500;font-size:15px;margin-right:5px}
+h2{font:500 13px var(--mono);color:var(--mut);margin:30px 0 12px;display:flex;align-items:center;gap:10px}
+h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.cat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:left;cursor:pointer;display:flex;gap:14px;align-items:flex-start;transition:border-color .2s,transform .2s,background .2s}
+.cat:hover{border-color:var(--g);background:var(--panel2);transform:translateY(-2px)}
+.gl{flex:none;width:38px;height:38px;border:1px solid var(--line2);border-radius:8px;display:grid;place-items:center;font:500 17px var(--mono);color:var(--g);transition:background .2s,border-color .2s}
+.cat:hover .gl{background:var(--gd);border-color:var(--g)}
+.cat b{display:block;font-weight:500}
+.cat small{color:var(--mut);font-size:13px;display:block;line-height:1.4;margin-top:2px}
+.cat em{font:12px var(--mono);color:var(--g);font-style:normal;display:block;margin-top:7px}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;background:none;border:1px solid var(--line2);color:var(--mut);padding:6px 12px;border-radius:99px;cursor:pointer;font-size:13px;transition:all .15s}
+.chip:hover{color:var(--tx);border-color:var(--mut)}
+.chip.on{border-color:var(--g);color:var(--g);background:var(--gd)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.grid.list{grid-template-columns:1fr}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,background .2s}
+.card:hover{border-color:var(--line2);background:var(--panel2)}
+.card .hd{display:flex;align-items:flex-start;gap:8px}
+.card h3{margin:0;font:500 16px var(--sans);flex:1}
+.card h3 small{display:block;font:12px var(--mono);color:var(--mut);margin-top:2px;font-weight:400}
+.ic{background:none;border:1px solid var(--line);color:var(--mut);width:34px;height:34px;border-radius:7px;cursor:pointer;display:grid;place-items:center;font-size:15px;transition:all .15s;flex:none}
+.ic:hover{color:var(--g);border-color:var(--g)}
+.ic.on{color:var(--g);border-color:var(--g);background:var(--gd)}
+.card p{margin:0;color:#aab4b1;font-size:14px}
+.meta{font:12px var(--mono);color:var(--mut);display:flex;flex-direction:column;gap:4px}
+.meta span b{color:var(--tx);font-weight:500}
+.tag{display:inline-block;font:11.5px var(--mono);padding:2px 8px;border-radius:4px;border:1px solid var(--line2);color:var(--mut);align-self:flex-start}
+.tag.f{color:var(--g);border-color:#39ff8855}
+.tag.a,.tag.p{color:var(--warn);border-color:#ffb45455}
+.tag.c{color:#7cc4ff;border-color:#7cc4ff55}
+.note{font-size:12.5px;color:var(--mut);margin:0}
+.act{display:flex;gap:8px;margin-top:auto}
+.go{flex:1;text-align:center;background:var(--g);color:#031109;font-weight:600;padding:10px 12px;border-radius:7px;font-size:14px;transition:filter .15s,box-shadow .15s}
+.go:hover{filter:brightness(1.1);box-shadow:0 0 18px #39ff8855}
+.ghost{background:none;border:1px solid var(--line2);padding:10px 12px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--tx);transition:border-color .15s}
+.ghost:hover{border-color:var(--g)}
+.empty{border:1px dashed var(--line2);border-radius:10px;padding:34px 18px;text-align:center;color:var(--mut)}
+.empty b{color:var(--tx);display:block;font-weight:500;margin-bottom:4px}
+.empty button{margin-top:12px}
+.top-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 6px}
+.back{background:none;border:0;color:var(--mut);cursor:pointer;padding:0;font:13px var(--mono)}
+.back:hover{color:var(--g)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:7px;overflow:hidden;margin-left:auto}
+.seg button{background:none;border:0;padding:6px 11px;cursor:pointer;color:var(--mut);font-size:13px}
+.seg button.on{background:var(--gd);color:var(--g)}
+.az{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 4px}
+.az a,.az span{font:12px var(--mono);width:26px;height:26px;display:grid;place-items:center;border-radius:5px;border:1px solid var(--line)}
+.az a{color:var(--g)}.az span{color:#3b4343}
+.az a:hover{background:var(--gd)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);transition:background .15s}
+.row:hover{background:var(--panel)}
+.row .nm{flex:1;min-width:0}
+.row .nm b{font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm small{color:var(--mut);font:12px var(--mono)}
+.row .tag{align-self:center}
+.lt{font:600 22px var(--mono);color:var(--g);margin:24px 0 4px;scroll-margin-top:120px}
+.about{max-width:68ch}
+.about h2{margin-top:34px}
+.about p,.about li{color:#b4beba}
+.about ul{padding-left:20px}
+.about li{margin:6px 0}
+.about .box{border:1px solid var(--line2);border-left:3px solid var(--g);background:var(--panel);padding:14px 16px;border-radius:8px;margin:18px 0}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--panel2);border:1px solid var(--g);color:var(--tx);padding:10px 16px;border-radius:8px;font:13px var(--mono);opacity:0;pointer-events:none;transition:all .25s;z-index:40}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+footer{border-top:1px solid var(--line);margin-top:48px;padding-top:16px;color:var(--mut);font:12px/1.6 var(--mono)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<script>
+const {useState,useEffect,useMemo,useRef,useCallback}=React;
+const html=htm.bind(React.createElement);
+
+const CATS=[
+{id:'user',n:'Username Search',g:'@',d:'Find where a handle is registered across sites.'},
+{id:'email',n:'Email Lookup',g:'✉',d:'Check breaches, reputation and domain context.'},
+{id:'phone',n:'Phone Number Tools',g:'☎',d:'Parse, validate and identify carrier information.'},
+{id:'domain',n:'Domain Intelligence',g:'◎',d:'WHOIS, DNS, certificates and site history.'},
+{id:'ip',n:'IP Lookup',g:'⌖',d:'Geolocation, ownership, reputation and open services.'},
+{id:'people',n:'People Search',g:'◉',d:'Public records, filings, court data and registries.'},
+{id:'social',n:'Social Media',g:'⬡',d:'Search public posts and profiles on social platforms.'},
+{id:'image',n:'Reverse Image Search',g:'▣',d:'Trace where an image appears online.'},
+{id:'meta',n:'Metadata Analysis',g:'≣',d:'Inspect EXIF data and check image integrity.'}];
+
+// access: f free, no account | a free account required | p paid or limited free tier | c software you install yourself
+const T=[
+['user','Namechk','Checks if a username or domain is registered across many services.','Username','https://namechk.com','f'],
+['user','WhatsMyName Web','Community-maintained username enumeration across hundreds of sites.','Username','https://whatsmyname.app','f','Open-source project by OSINT community.'],
+['user','Instant Username Search','Quickly checks username availability on popular platforms.','Username','https://instantusername.com','f'],
+['user','KnowEm','Username availability across social networks.','Username / brand name','https://knowem.com','f','Registration services are paid; basic checks are free.'],
+['user','Sherlock Project','Command-line tool that hunts usernames across social networks.','Username','https://github.com/sherlock-project/sherlock','c','Runs locally on your own machine; needs Python.'],
+['email','Have I Been Pwned','Shows whether an email appears in known public data breaches.','Email address','https://haveibeenpwned.com','f'],
+['email','EmailRep','Reputation and risk signals for an email address.','Email address','https://emailrep.io','f','Heavy use may need an API key.'],
+['email','Epieos','Looks up accounts and public metadata linked to an email.','Email address','https://epieos.com','f','Some features are limited without a paid plan.'],
+['email','Hunter','Finds professional email patterns for a company domain.','Domain / company','https://hunter.io','a','Free tier needs an account and has monthly limits.'],
+['email','Holehe','Command-line tool that checks which sites an email is registered on.','Email address','https://github.com/megadose/holehe','c','Runs locally; needs Python.'],
+['phone','PhoneInfoga','Open-source framework to scan international phone numbers.','Phone (E.164)','https://github.com/sundowndev/phoneinfoga','c','Self-hosted; runs on your own machine.'],
+['phone','Libphonenumber Demo','Google’s library demo: validates, formats and shows region and line type.','Phone number','https://libphonenumber.appspot.com','f'],
+['phone','Free Carrier Lookup','Identifies the carrier and the SMS gateway of a number.','Phone number','https://freecarrierlookup.com','f'],
+['phone','Truecaller','Caller ID database for unknown numbers.','Phone number','https://www.truecaller.com','a','Account required for search.'],
+['domain','ICANN Lookup','Official registration data (RDAP/WHOIS) for domains.','Domain','https://lookup.icann.org','f'],
+['domain','crt.sh','Searches certificate transparency logs to reveal subdomains.','Domain / %.domain','https://crt.sh','f'],
+['domain','DNSDumpster','DNS recon and host mapping for a domain.','Domain','https://dnsdumpster.com','f'],
+['domain','ViewDNS.info','Collection of DNS, WHOIS and reverse lookup tools.','Domain / IP','https://viewdns.info','f'],
+['domain','urlscan.io','Scans a URL and records requests, resources and screenshots.','URL / domain','https://urlscan.io','f','Searching public scans is free; private scans need an account.'],
+['domain','Wayback Machine','Archived snapshots of websites over time.','URL','https://web.archive.org','f'],
+['domain','SecurityTrails','Historical DNS and subdomain data.','Domain','https://securitytrails.com','a','Free tier needs an account and is limited.'],
+['domain','BuiltWith','Identifies technologies used by a website.','Domain','https://builtwith.com','p','Basic profile free; detailed lists are paid.'],
+['ip','IPinfo','Geolocation, ASN and company data for an IP.','IP address','https://ipinfo.io','f','Free lookups are rate limited.'],
+['ip','AbuseIPDB','Community reports of abusive IP addresses.','IP address','https://www.abuseipdb.com','f'],
+['ip','GreyNoise Visualizer','Shows whether an IP is scanning the internet at large.','IP address','https://viz.greynoise.io','a','Free account may be required for some queries.'],
+['ip','Hurricane Electric BGP Toolkit','Routing, ASN and prefix information.','IP / ASN / domain','https://bgp.he.net','f'],
+['ip','Shodan','Search engine for internet-connected devices and open ports.','IP / query','https://www.shodan.io','a','Account required; many filters need paid access.'],
+['ip','Censys Search','Internet-wide host and certificate search.','IP / query','https://search.censys.io','a','Account required; free tier is limited.'],
+['people','OpenCorporates','Largest open database of company registrations.','Name / company','https://opencorporates.com','f','Some bulk features are paid.'],
+['people','SEC EDGAR Search','US company filings and officer disclosures.','Name / company','https://www.sec.gov/edgar/search/','f'],
+['people','CourtListener','Free searchable US court opinions and dockets.','Name / case','https://www.courtlistener.com','f'],
+['people','Whitepages','US directory lookup by name, phone or address.','Name / phone','https://www.whitepages.com','p','Basic results free; full reports are paid.'],
+['people','Spokeo','Aggregated public-record people search.','Name / email / phone','https://www.spokeo.com','p','Full reports require payment.'],
+['social','X Advanced Search','Filter posts by words, accounts, dates and engagement.','Keywords / handle','https://x.com/search-advanced','a','Login required to view results.'],
+['social','Social Searcher','Searches public posts across several social networks.','Keyword / hashtag','https://www.social-searcher.com','f','Free searches are limited per day.'],
+['social','TGStat','Telegram channel directory and analytics.','Channel / keyword','https://tgstat.com','f'],
+['social','OSINT Framework','Browsable tree of OSINT resources by topic.','Browse','https://osintframework.com','f'],
+['social','Bellingcat Toolkit','Curated, tested investigative tools from Bellingcat.','Browse','https://bellingcat.gitbook.io/toolkit','f'],
+['image','Google Lens','Finds visually similar images and sources.','Image upload / URL','https://lens.google.com','f'],
+['image','TinEye','Finds earlier appearances and modified versions of an image.','Image upload / URL','https://tineye.com','f','Free searches are limited.'],
+['image','Yandex Images','Strong visual matching for landmarks and scenes.','Image upload / URL','https://yandex.com/images/','f'],
+['image','Bing Visual Search','Identifies objects, places and matching images.','Image upload / URL','https://www.bing.com/visualsearch','f'],
+['meta','Jeffrey’s Image Metadata Viewer','Reads EXIF data from an uploaded or linked image.','Image file / URL','https://exif.regex.info/exif.cgi','f','Uploads go to a third-party server.'],
+['meta','Metadata2Go','Online metadata viewer for images, documents and media.','File upload','https://www.metadata2go.com','f','Uploads go to a third-party server.'],
+['meta','ExifTool','The reference command-line tool for reading metadata.','File','https://exiftool.org','c','Runs locally; your files never leave your device.'],
+['meta','FotoForensics','Error Level Analysis for spotting image edits.','Image upload / URL','https://fotoforensics.com','f','Uploads are processed on their server.'],
+['meta','Forensically','Browser-based clone, noise and ELA analysis.','Image file','https://29a.ch/photo-forensics/','f','Runs in the browser.'],
+['meta','InVID-WeVerify','Browser plugin for verifying images and videos.','Image / video','https://www.invid-project.eu/tools-and-services/invid-verification-plugin/','f']
+].map(r=>({id:r[1].toLowerCase().replace(/[^a-z0-9]+/g,'-'),cat:r[0],name:r[1],desc:r[2],input:r[3],url:r[4],acc:r[5],note:r[6]||''}));
+
+const ACC={f:['Free, no account','f'],a:['Account required','a'],p:['Paid / limited free','p'],c:['Install locally','c']};
+const catName=id=>CATS.find(c=>c.id===id).n;
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const match=(t,q)=>{q=q.trim().toLowerCase();if(!q)return true;return q.split(/\s+/).every(w=>(t.name+' '+t.desc+' '+t.input+' '+catName(t.cat)+' '+t.note).toLowerCase().includes(w))};
+
+function Card({t,fav,onFav,onCopy}){
+  const [lab,k]=ACC[t.acc];
+  return html`<article class="card">
+    <div class="hd"><h3>${t.name}<small>${catName(t.cat)}</small></h3>
+      <button class=${'ic'+(fav?' on':'')} onClick=${()=>onFav(t.id)} aria-pressed=${fav} aria-label=${(fav?'Remove ':'Add ')+t.name+(fav?' from':' to')+' favorites'}>${fav?'★':'☆'}</button></div>
+    <p>${t.desc}</p>
+    <div class="meta"><span>input: <b>${t.input}</b></span></div>
+    <span class=${'tag '+k}>${lab}</span>
+    ${t.note&&html`<p class="note">${t.note}</p>`}
+    <div class="act"><a class="go" href=${t.url} target="_blank" rel="noopener noreferrer">Open ${t.acc==='c'?'project page':'tool'}</a>
+      <button class="ghost" onClick=${()=>onCopy(t.url)} aria-label=${'Copy link for '+t.name}>Copy link</button></div>
+  </article>`;
+}
+
+function Grid({items,favs,onFav,onCopy,list,onClear}){
+  if(!items.length)return html`<div class="empty"><b>No tools match.</b>Try fewer words, or search by purpose such as “breach”, “EXIF” or “subdomain”.${onClear&&html`<div><button class="ghost" onClick=${onClear}>Clear search and filters</button></div>`}</div>`;
+  return html`<div class=${'grid'+(list?' list':'')}>${items.map(t=>html`<${Card} key=${t.id} t=${t} fav=${favs.includes(t.id)} onFav=${onFav} onCopy=${onCopy}/>`)}</div>`;
+}
+
+function SearchBox({q,setQ,ph}){
+  const r=useRef();
+  useEffect(()=>{const f=e=>{if(e.key==='/'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();r.current&&r.current.focus()}};window.addEventListener('keydown',f);return()=>window.removeEventListener('keydown',f)},[]);
+  return html`<div class="search" role="search"><span aria-hidden="true">&gt;_</span>
+    <input ref=${r} value=${q} onInput=${e=>setQ(e.target.value)} placeholder=${ph} aria-label="Search tools" autoComplete="off" autoCapitalize="off" spellCheck="false"/>
+    ${q&&html`<button onClick=${()=>setQ('')} aria-label="Clear search">✕</button>`}</div>`;
+}
+
+function Home({q,setQ,go,...p}){
+  const res=useMemo(()=>T.filter(t=>match(t,q)),[q]);
+  return html`<div>
+    <section class="hero"><div class="scan"></div>
+      <h1>Find the right tool for the question.</h1>
+      <p>A curated index of ${T.length} public OSINT tools. TRACE links you to the services; it never runs searches for you or sees what you type.</p>
+      <${SearchBox} q=${q} setQ=${setQ} ph="Search tools, e.g. breach, EXIF, subdomain"/>
+      <div class="hint">Press / to focus search. Your query stays in this browser tab.</div>
+      <div class="stats"><span><b>${T.length}</b>tools</span><span><b>${CATS.length}</b>categories</span><span><b>${p.favs.length}</b>saved</span></div>
+    </section>
+    ${q.trim()?html`<h2>${res.length} result${res.length===1?'':'s'}</h2><${Grid} items=${res} ...${p} onClear=${()=>setQ('')}/>`:html`
+      <h2>Categories</h2>
+      <div class="cats">${CATS.map(c=>html`<button class="cat" key=${c.id} onClick=${()=>go('cat/'+c.id)}><span class="gl">${c.g}</span><span><b>${c.n}</b><small>${c.d}</small><em>${T.filter(t=>t.cat===c.id).length} tools</em></span></button>`)}</div>
+      ${p.favs.length>0&&html`<h2>Your favorites</h2><${Grid} items=${T.filter(t=>p.favs.includes(t.id)).slice(0,4)} ...${p}/>`}`}
+  </div>`;
+}
+
+function Category({id,go,q,setQ,...p}){
+  const c=CATS.find(x=>x.id===id);
+  const [acc,setAcc]=useState('all');
+  if(!c)return html`<div class="empty"><b>Category not found.</b><button class="ghost" onClick=${()=>go('')}>Back to dashboard</button></div>`;
+  const items=T.filter(t=>t.cat===id&&(acc==='all'||t.acc===acc)&&match(t,q));
+  return html`<div>
+    <div class="top-row"><button class="back" onClick=${()=>go('')}>&lt; dashboard</button></div>
+    <h1 style="font:500 28px var(--sans);margin:6px 0 4px">${c.n}</h1>
+    <p style="color:var(--mut);margin:0 0 16px">${c.d}</p>
+    <div class="chips" role="tablist" aria-label="Browse categories">${CATS.map(x=>html`<button key=${x.id} class=${'chip'+(x.id===id?' on':'')} onClick=${()=>go('cat/'+x.id)}>${x.n}</button>`)}</div>
+    <${SearchBox} q=${q} setQ=${setQ} ph=${'Filter '+c.n.toLowerCase()}/>
+    <div class="chips" style="margin-top:10px">${[['all','All access'],['f','Free'],['a','Account'],['p','Paid / limited'],['c','Install locally']].map(([k,l])=>html`<button key=${k} class=${'chip'+(acc===k?' on':'')} onClick=${()=>setAcc(k)}>${l}</button>`)}</div>
+    <div style="margin-top:8px"><${Grid} items=${items} ...${p} list=${p.list} onClear=${()=>{setQ('');setAcc('all')}}/></div>
+  </div>`;
+}
+
+function Directory({q,setQ,...p}){
+  const items=T.filter(t=>match(t,q)).sort((a,b)=>a.name.localeCompare(b.name));
+  const groups={};items.forEach(t=>{const l=/[A-Z]/i.test(t.name[0])?t.name[0].toUpperCase():'#';(groups[l]=groups[l]||[]).push(t)});
+  const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  return html`<div>
+    <h1 style="font:500 28px var(--sans);margin:28px 0 14px">Directory</h1>
+    <${SearchBox} q=${q} setQ=${setQ} ph="Search A–Z directory"/>
+    <div class="az" aria-label="Jump to letter">${letters.map(l=>groups[l]?html`<a key=${l} href=${'#dir-'+l} onClick=${e=>{e.preventDefault();const el=document.getElementById('dir-'+l);el&&el.scrollIntoView({behavior:'smooth'})}}>${l}</a>`:html`<span key=${l}>${l}</span>`)}</div>
+    ${!items.length?html`<div class="empty" style="margin-top:16px"><b>No tools match “${q}”.</b>Check the spelling or search by category or purpose.<div><button class="ghost" onClick=${()=>setQ('')}>Clear search</button></div></div>`:
+    Object.keys(groups).sort().map(l=>html`<div key=${l}><div class="lt" id=${'dir-'+l}>${l}</div>${groups[l].map(t=>html`<div class="row" key=${t.id}>
+      <div class="nm"><b>${t.name}</b><small>${catName(t.cat)} · ${t.input}</small></div>
+      <span class=${'tag '+ACC[t.acc][1]}>${ACC[t.acc][0]}</span>
+      <button class=${'ic'+(p.favs.includes(t.id)?' on':'')} onClick=${()=>p.onFav(t.id)} aria-label=${'Toggle favorite '+t.name}>${p.favs.includes(t.id)?'★':'☆'}</button>
+      <button class="ic" onClick=${()=>p.onCopy(t.url)} aria-label=${'Copy link for '+t.name}>⧉</button>
+      <a class="ic" href=${t.url} target="_blank" rel="noopener noreferrer" aria-label=${'Open '+t.name}>↗</a></div>`)}</div>`)}
+  </div>`;
+}
+
+function Favorites({go,...p}){
+  const items=T.filter(t=>p.favs.includes(t.id));
+  return html`<div><h1 style="font:500 28px var(--sans);margin:28px 0 14px">Favorites</h1>
+    ${items.length?html`<${Grid} items=${items} ...${p}/>`:html`<div class="empty"><b>No favorites yet.</b>Tap the ☆ on any tool to pin it here.<div><button class="ghost" onClick=${()=>go('')}>Browse tools</button></div></div>`}
+    ${items.length>0&&html`<div style="margin-top:14px"><button class="ghost" onClick=${p.onClearFavs}>Remove all favorites</button></div>`}</div>`;
+}
+
+function About(){
+  return html`<div class="about"><h1 style="font:500 28px var(--sans);margin:28px 0 8px">About TRACE</h1>
+    <p>TRACE is a directory of publicly accessible open-source intelligence tools. It does not perform lookups, store your investigations or contact any service on your behalf. Each button opens the tool’s own website in a new tab.</p>
+    <div class="box"><b>Privacy:</b> TRACE has no backend and no analytics. Favorites and display preferences are saved only in your browser’s local storage. Search text is processed locally and is never transmitted.</div>
+    <h2>What is ethical OSINT?</h2>
+    <p>OSINT is the collection and analysis of information that is lawfully available to the public: registries, archives, public posts, technical records and published media.</p>
+    <ul><li>Use only information you can access without bypassing logins, paywalls or security controls.</li>
+    <li>Define a legitimate purpose first, such as security research, journalism, due diligence or verifying a claim.</li>
+    <li>Collect the minimum needed and store it securely.</li>
+    <li>Verify findings with more than one source before acting on them.</li></ul>
+    <h2>Legal research</h2>
+    <ul><li>Laws differ by country and region. Data protection rules such as GDPR and CCPA can apply to personal data even when it is public.</li>
+    <li>Do not use results for stalking, harassment, doxxing, fraud or discrimination. Many jurisdictions criminalize these.</li>
+    <li>Pretexting, impersonation and accessing accounts you do not own are not OSINT.</li>
+    <li>People-search and lookup sites often allow opt-outs; respect a person’s privacy requests where you can.</li>
+    <li>This page is general information, not legal advice. Consult a qualified lawyer for your situation.</li></ul>
+    <h2>About the listings</h2>
+    <p>Each tool is labeled as free, account required, paid or limited, or installed locally. Pricing, limits and terms change, so confirm them on the tool’s own site. Files you upload to online tools are sent to those third parties. Prefer local tools such as ExifTool for sensitive material. Inclusion in TRACE is not an endorsement or a guarantee of accuracy.</p>
+  </div>`;
+}
+
+function App(){
+  const parse=()=>{const h=location.hash.replace(/^#\/?/,'');return h};
+  const [route,setRoute]=useState(parse());
+  const [q,setQ]=useState('');
+  const [favs,setFavs]=useState(()=>ls.get('trace:favs',[]).filter(id=>T.some(t=>t.id===id)));
+  const [list,setList]=useState(()=>ls.get('trace:list',false));
+  const [online,setOnline]=useState(navigator.onLine);
+  const [toast,setToast]=useState('');
+  useEffect(()=>{const f=()=>{setRoute(parse());window.scrollTo(0,0)};window.addEventListener('hashchange',f);const on=()=>setOnline(true),off=()=>setOnline(false);window.addEventListener('online',on);window.addEventListener('offline',off);return()=>{window.removeEventListener('hashchange',f);window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
+  useEffect(()=>ls.set('trace:favs',favs),[favs]);
+  useEffect(()=>ls.set('trace:list',list),[list]);
+  const go=r=>{setQ('');location.hash='/'+r};
+  const flash=m=>{setToast(m);clearTimeout(flash.t);flash.t=setTimeout(()=>setToast(''),1800)};
+  const onFav=useCallback(id=>setFavs(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]),[]);
+  const onCopy=async u=>{try{await navigator.clipboard.writeText(u);flash('Link copied')}catch(e){try{const a=document.createElement('textarea');a.value=u;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();flash('Link copied')}catch(_){flash('Copy failed. Select the link manually.')}}};
+  const p={favs,onFav,onCopy,list,go,q,setQ};
+  const [pg,arg]=route.split('/');
+  const page=pg==='cat'?'cat':pg==='directory'?'directory':pg==='favorites'?'favorites':pg==='about'?'about':'home';
+  const NAV=[['home','Dashboard',''],['directory','Directory','directory'],['favorites','Favorites ('+favs.length+')','favorites'],['about','About','about']];
+  return html`<div>
+    <header class="top"><div class="bar">
+      <button class="logo" onClick=${()=>go('')} aria-label="TRACE home"><i></i>TRACE</button>
+      <nav aria-label="Main">${NAV.map(([k,l,r])=>html`<button key=${k} aria-current=${page===k||(k==='home'&&page==='cat')?'page':undefined} onClick=${()=>go(r)}>${l}</button>`)}</nav>
+      <div class="st" title=${online?'Your browser is online. TRACE itself makes no data requests.':'Offline. The directory still works; external tools will not load.'}><span class=${'dot'+(online?'':' off')}></span><span class="lbl">${online?'online · local only':'offline'}</span></div>
+    </div></header>
+    <main class="wrap">
+      ${page==='home'&&html`<${Home} ...${p}/>`}
+      ${page==='cat'&&html`<div><div class="seg" style="width:fit-content;margin:18px 0 0 auto"><button class=${!list?'on':''} onClick=${()=>setList(false)}>Grid</button><button class=${list?'on':''} onClick=${()=>setList(true)}>List</button></div><${Category} id=${arg} ...${p}/></div>`}
+      ${page==='directory'&&html`<${Directory} ...${p}/>`}
+      ${page==='favorites'&&html`<${Favorites} ...${p} onClearFavs=${()=>{setFavs([]);flash('Favorites cleared')}}/>`}
+      ${page==='about'&&html`<${About}/>`}
+      <footer>TRACE links to third-party services and does not run searches, collect inputs or guarantee results. Use responsibly and lawfully. Verify pricing and terms on each tool’s site.</footer>
+    </main>
+    <div class=${'toast'+(toast?' on':'')} role="status" aria-live="polite">${toast}</div>
+  </div>`;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+</body>
+</html>
